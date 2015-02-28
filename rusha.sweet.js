@@ -239,6 +239,7 @@
       if (size % 64 > 0) {
         throw new Error('Chunk size must be a multiple of 128 bit');
       }
+      self.chunkOffset = 0;
       self.maxChunkLen = size;
       self.padMaxChunkLen = padlen(size);
       // The size of the heap is the sum of:
@@ -320,7 +321,24 @@
     function (str) {
       return hex(rawDigest(str).buffer);
     };
+    this.updateInit = function() {
+        initState(self.heap, self.padMaxChunkLen);
+    };
+    this.update = function(str) {
+        var chunkLen = str.byteLength || str.length;
+        var accumulatedMsgSize = self.chunkOffset + chunkLen;
+        coreCall(str, 0, chunkLen, accumulatedMsgSize, chunkLen != self.maxChunkLen);
+        self.chunkOffset = accumulatedMsgSize; // chunkOffset is the the total size of the received message after calling upload()
+    };
+    var rawFinalize = this.rawFinalize = function () {
+        if(self.chunkOffset % self.maxChunkLen == 0)
+            coreCall([], 0, 0, self.chunkOffset, true);
 
+        return getRawDigest(self.heap, self.padMaxChunkLen).buffer;
+    };
+    this.hexFinalize = function () {
+        return hex(rawFinalize());
+    };
   };
 
   macro rol1  { rule { ($v:expr) } => { ($v <<  1 | $v >>> 31) } }

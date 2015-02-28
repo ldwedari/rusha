@@ -245,7 +245,6 @@
             if (size % 64 > 0) {
                 throw new Error('Chunk size must be a multiple of 128 bit');
             }
-            self$2.chunkOffset = 0;
             self$2.maxChunkLen = size;
             self$2.padMaxChunkLen = padlen(size);
             // The size of the heap is the sum of:
@@ -319,24 +318,6 @@
         // as a hex string.
         this.digest = this.digestFromString = this.digestFromBuffer = this.digestFromArrayBuffer = function (str) {
             return hex(rawDigest(str).buffer);
-        };
-        this.updateInit = function() {
-            initState(self$2.heap, self$2.padMaxChunkLen);
-        };
-        this.update = function(str) {
-            var chunkLen = str.byteLength || str.length;
-            var accumulatedMsgSize = self$2.chunkOffset + chunkLen;
-            coreCall(str, 0, chunkLen, accumulatedMsgSize, chunkLen != self$2.maxChunkLen);
-            self$2.chunkOffset = accumulatedMsgSize; // chunkOffset is the the total size of the received message after calling upload()
-        };
-        var rawFinalize = this.rawFinalize = function () {
-            if(self$2.chunkOffset % self$2.maxChunkLen == 0)
-                coreCall([], 0, 0, self$2.chunkOffset, true);
-
-            return getRawDigest(self$2.heap, self$2.padMaxChunkLen).buffer;
-        };
-        this.hexFinalize = function () {
-            return hex(rawFinalize());
         };
     }
     ;
